@@ -1,0 +1,126 @@
+---
+title: "California Spiny Lobster"
+author: "Nicole Pepper"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# EDS 221 - Day 6 - End of Day Activity
+
+## California Spiny Lobster Activity
+
+Set up work space
+```{r}
+# Clean up environment
+rm(list = ls())
+
+# Load libraries
+library(tidyverse)
+library(here)
+library(dplyr)
+library(janitor)
+
+```
+
+Bring in the dancing lobsters! 
+Part 1
+```{r}
+# Read in the data
+spinyLobster <- read_csv(here("data","Lobster_Abundance_All_Years_20210412.csv"), na = c("-99999"))%>%
+  janitor::clean_names() %>%
+  uncount(count)
+
+# Group and summarize the data
+lobster_count_year <- spinyLobster %>% 
+  group_by(year,site) %>% 
+  summarise (total_Count = n(),lobster_length = mean(size_mm, na.rm = TRUE))
+
+# Create a plot
+ggplot(data = lobster_count_year, aes(x = year, y = total_Count)) + 
+  geom_line(aes(color = site)) +
+  labs(title = "Spiny Lobster Population in California from 2012 - 2020", x = "Year", Y = "Total Estimated Population")
+
+```
+
+Part 2:
+```{r}
+# Create a subset for 2020
+lobster_2020 <- spinyLobster %>%  
+  filter(year%in% c("2020")) %>% 
+  mutate("legal"= case_when(
+    size_mm > 79.76 ~ 'yes',
+    size_mm < 79.76 ~ 'no'
+  )) %>%
+  group_by(site,legal) %>%
+  summarize(lobster_count = n())
+
+# Create a graph of non-legal lobsters
+ggplot(data=lobster_2020, aes(fill = legal, y = lobster_count, x = site)) +
+  geom_col(
+    position = "fill"
+  ) +
+labs(title = "Spiny Lobster Populations near Santa Barbara, California", x = "Study Site", y = "Proportion of Legal Lobsters")
+```
+
+The sites with the largest proportion of legal lobsters include:
+1) Naples & Isla Vista
+2) Mohawk
+
+Part 3:
+```{r}
+# Create some subsets
+
+lobster_IVEE_CARP_NAPL <- spinyLobster %>%  
+  filter(site %in% c("IVEE","NAPL","CARP"))
+
+lobsters_aug <- spinyLobster %>% 
+  filter(month %in% c("8"))
+
+lobsters_AQUE_gt70 <- spinyLobster %>% 
+  filter(site == "AQUE"| size_mm > 70)
+
+lobsters_noNaples <- spinyLobster %>% 
+  filter(site != "NAPL")
+
+```
+
+```{r}
+# mutate practice
+spinyLobster <- spinyLobster %>%
+  mutate("lobster_length_cent" = size_mm/10)
+
+spinyLobster <- spinyLobster %>%
+ mutate(site = tolower(site))
+
+spinyLobster <- spinyLobster %>%
+  mutate(area = as.character(area)) #changes to numeric
+```
+
+
+```{r}
+#case when practice
+
+#
+spinyLobster <- spinyLobster %>%  
+  mutate("size_bin", case_when(
+    size_mm <= 70 ~ 'small',
+    size_mm > 70 ~ 'large'
+  )
+  )
+
+spinyLobster <- spinyLobster %>%  
+  mutate("size_bin"= case_when(
+    size_mm <= 70 ~ 'small',
+    size_mm > 70 ~ 'large'
+  ) )
+
+spinyLobster <- spinyLobster %>%  
+  dplyr::mutate(designation= case_when(
+  site %in% c("IVEE", "NAPL") ~  "MPA",
+  TRUE ~  "Not MPA"
+  ))
+  
+```
+
